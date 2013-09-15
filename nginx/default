@@ -1,0 +1,57 @@
+server {
+    listen 192.168.42.23:80;
+    server_name example.com;
+
+    access_log /var/drbd/log/nginx_access.log;
+    error_log /var/drbd/log/nginx_error.log;
+
+    location ~ .php$ {
+      fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+      if (!-f $document_root$fastcgi_script_name) {
+        return 404;
+      }
+      fastcgi_pass unix:/var/run/php5-fpm.sock;
+      fastcgi_index index.php;
+      fastcgi_intercept_errors on;
+      include fastcgi_params;
+      root /var/drbd/www;
+    }
+
+    index index.php;
+
+    location / {
+      root /var/drbd/www/;
+    }
+}
+
+
+server {
+    listen 192.168.42.23:443;
+    server_name example.com;
+
+    access_log /var/drbd/log/nginx_access.log;
+    error_log /var/drbd/log/nginx_error.log;
+
+    location ~ .php$ {
+      fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+      if (!-f $document_root$fastcgi_script_name) {
+        return 404;
+      }
+      fastcgi_pass unix:/var/run/php5-fpm.sock;
+      fastcgi_index index.php;
+      fastcgi_intercept_errors on;
+      include fastcgi_params;
+      root /var/drbd/www;
+    }
+
+    index index.php;
+
+    location / {
+      root /var/drbd/www/;
+    }
+
+    ssl on;
+    ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;
+    ssl_certificate_key /etc/ssl/private/ssl-cert-snakeoil.key;
+}
+

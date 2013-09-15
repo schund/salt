@@ -1,0 +1,162 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          netatalk
+# Required-Start:    $remote_fs $syslog
+# Should-Start:      avahi-daemon
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      1
+### END INIT INFO
+#
+# netatalk      Netatalk 2.2.2 initscript
+# Author:       Thomas Kaiser <Thomas.Kaiser@phg-online.de>
+
+set -e
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DESC="Netatalk"
+NAME=netatalk
+SCRIPTNAME=/etc/init.d/$NAME
+
+# Guard to prevent execution if netatalk was removed.
+test -x /usr/sbin/afpd || exit 0
+
+# Set defaults. Please change these options in /etc/default/netatalk
+ATALK_NAME=`/bin/hostname --short`
+ATALK_UNIX_CHARSET='LOCALE'
+ATALK_MAC_CHARSET='MAC_ROMAN'
+
+CNID_METAD_RUN=yes
+AFPD_RUN=yes
+AFPD_MAX_CLIENTS=50
+AFPD_UAMLIST="-U uams_dhx2.so,uams_clrtxt.so"
+AFPD_GUEST=nobody
+CNID_CONFIG="-l log_note"
+
+ATALKD_RUN=no
+PAPD_RUN=no
+TIMELORD_RUN=no
+#A2BOOT_RUN=no
+ATALK_ZONE=
+ATALK_BGROUND=no
+
+# old /etc/default/netatalk expected hostname in $HOSTNAME by default
+HOSTNAME=`/bin/hostname`
+
+# Read in netatalk configuration.
+if [ -f /etc/default/netatalk ]; then
+    . /etc/default/netatalk
+fi
+
+# Start Netatalk servers.
+atalk_startup() {
+	if [ x"$ATALKD_RUN" = x"yes" ]; then
+
+	# Try to load the AppleTalk kernel module if it was intended.
+    if grep -q '^appletalk$' /etc/modules; then
+		/sbin/modprobe appletalk || echo "[could not load appletalk module]"
+    fi
+
+	# Start atalkd server.
+	/usr/sbin/atalkd
+
+	# register workstation
+	/usr/bin/nbprgstr -p 4 "$ATALK_NAME:Workstation$ATALK_ZONE"
+	/usr/bin/nbprgstr -p 4 "$ATALK_NAME:netatalk$ATALK_ZONE"
+
+	echo -n " atalkd"
+	fi
+	
+	# prepare startup of file services
+	if [ "x$CNID_METAD_RUN" = "xyes" -a -x /usr/sbin/cnid_metad ] ; then
+		echo -n " cnid_metad"
+        /usr/sbin/cnid_metad $CNID_CONFIG
+    fi
+	
+	if [ x"$AFPD_RUN" = x"yes" ]; then
+	/usr/sbin/afpd $AFPD_UAMLIST -g $AFPD_GUEST -c $AFPD_MAX_CLIENTS \
+		-n "$ATALK_NAME$ATALK_ZONE"
+	echo -n " afpd"
+	fi
+
+    if [ "x$ATALKD_RUN" = "xyes" ]; then
+        if [ "x$PAPD_RUN" = "xyes" ]; then
+            /usr/sbin/papd
+            echo -n " papd"
+        fi
+
+        if [ x"$TIMELORD_RUN" = x"yes" ]; then
+            /usr/sbin/timelord
+            echo -n " timelord"
+        fi
+    fi
+}
+
+case "$1" in
+	start)
+		if [ "x$ATALK_BGROUND" = "xyes" -a "x$ATALKD_RUN" = "xyes" ]; then
+			echo "Starting Netatalk services in the background."
+			atalk_startup >/dev/null &
+		else
+			echo -n "Starting Netatalk services (this will take a while): "
+			atalk_startup
+			echo "."
+		fi
+	;;
+
+	stop)
+		echo -n "Stopping Netatalk Daemons:"
+		echo -n " afpd"
+		start-stop-daemon --stop --quiet --oknodo --exec /usr/sbin/afpd
+
+		echo -n " cnid_metad"
+		start-stop-daemon --stop --quiet --oknodo --exec /usr/sbin/cnid_metad
+	
+		if test -x /usr/sbin/papd; then
+                    echo -n " papd"
+		    start-stop-daemon --stop --quiet --oknodo --exec /usr/sbin/papd
+	        fi
+	
+		if test -x /usr/sbin/timelord; then
+                    echo -n " timelord"
+		    start-stop-daemon --stop --quiet --oknodo --exec /usr/sbin/timelord
+	        fi
+
+		if test -x /usr/sbin/atalkd; then
+                    echo -n " atalkd"
+		    start-stop-daemon --stop --quiet --oknodo --exec /usr/sbin/atalkd
+	        fi
+	
+		echo "."
+	;;
+
+	status)
+		if [ "$(ps aux | grep [/]usr/sbin/afp)" ]; then
+		    echo "afp is running"
+		    exit 0
+		else
+		    echo "afp isn't running"
+		    exit 1
+		fi
+	;;
+
+	restart)
+		$0 force-reload
+	;;
+
+	force-reload)
+		echo -n "Restarting Netatalk Daemons (this will take a while)"
+		$0 stop
+		echo -n "."
+		sleep 2
+		echo -n "."
+		if $0 start; then
+			echo "done."
+		fi
+	;;
+  
+	*)
+		echo "Usage: $0 {start|stop|restart|force-reload}" >&2
+		exit 1
+	;;
+esac
