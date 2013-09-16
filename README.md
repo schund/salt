@@ -19,7 +19,7 @@ Shows how to install Software depending on each other and configure multiple Fil
 
 * drbd
 
-Show the Installation and Configuration of Software if every config file has the same content on all targeted Minions.
+Shows the Installation and Configuration of Software if every config file has the same content on all targeted Minions.
 
 * corosync
 
@@ -28,7 +28,7 @@ Shows how to use "grains" to get the IP-Address from "eth0" on the respective Mi
 
 * nginx
 
-Install and configure nginx and PHP with php5-mysql. Shows the usage of Modules.
+Installs and configures "nginx" and "PHP" with "php5-mysql". Shows the usage of Modules.
 
 Pillars
 =======
