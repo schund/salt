@@ -29,8 +29,3 @@ Shows how to use "grains" to get the IP-Address from "eth0" on the respective Mi
 * nginx
 
 Installs and configures "nginx" and "PHP" with "php5-mysql". Shows the usage of Modules.
-
-Pillars
-=======
-
-In the "pillar"-Directory you will find some example of States using "pillar"-Data. (It's empty at the moment, though.)
