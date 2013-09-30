@@ -29,3 +29,7 @@ Shows how to use "grains" to get the IP-Address from "eth0" on the respective Mi
 * nginx
 
 Installs and configures "nginx" and "PHP" with "php5-mysql". Shows the usage of Modules.
+
+* munin
+
+Installs and configure "munin-node" on all Minions and "munin" on a Monitor-Machine. The State will use the "SaltMine-Feature" which enables a Minion to get informations about other Minions. The State also shows some "advanced" Jinja-Functions.
