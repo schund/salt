@@ -1,0 +1,46 @@
+*filter
+
+# Allow all loopback traffic
+-A INPUT -i lo -j ACCEPT
+
+{% if 'input' in iptables.keys() -%}
+# Allow internal network
+{% for interface in iptables['input'] -%}
+-A INPUT -i {{ interface }} -j ACCEPT
+{% endfor -%}
+{% endif -%}
+
+{% if 'forward' in iptables.keys() -%}
+# Allow forwarding
+{% for interface in iptables['forward'] -%}
+-A FORWARD -i {{ interface }} -j ACCEPT
+{% endfor -%}
+{% endif -%}
+
+# Accept all esthablished inbound connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Allow all outbound traffic
+-A OUTPUT -j ACCEPT
+
+# Allow ping
+-A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+
+{% if 'ssh' in iptables.keys() -%}
+# Allow ssh
+{% for ip in iptables['ssh'] -%}
+-A INPUT -p tcp --dport 22 --src {{ ip }} -j ACCEPT
+{% endfor -%}
+{% endif -%}
+{% if 'ports' in iptables.keys() -%}
+# Allow ports
+{% for port in iptables['ports'] -%}
+-A INPUT -p tcp --dport {{ port }} -j ACCEPT
+{% endfor -%}
+{% endif -%}
+
+# Reject all other
+-A INPUT -j REJECT
+-A FORWARD -j REJECT
+
+COMMIT

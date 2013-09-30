@@ -33,3 +33,20 @@ Installs and configures "nginx" and "PHP" with "php5-mysql". Shows the usage of 
 * munin
 
 Installs and configure "munin-node" on all Minions and "munin" on a Monitor-Machine. The State will use the "SaltMine-Feature" which enables a Minion to get informations about other Minions. The State also shows some "advanced" Jinja-Functions.
+
+* iptables
+
+Configures iptables using Pillar informations. Use a pillar to define which Services or Interfaces you want to configure. Example:
+
+iptables:
+  input:
+    - xenbr1
+  forward:
+    - xenbr1
+  ports:
+    - 443
+  ssh:
+    - 1.2.3.4
+    - 2.3.4.5
+
+This will enable all INPUT and FORWARDING-Traffic on the Interface "xenbr1", it also enables Traffic on all interfaces on Port 443 (HTTPS). SSH will be allowed from the listed IPs.
